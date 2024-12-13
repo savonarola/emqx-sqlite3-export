@@ -1,8 +1,9 @@
-from flask import Flask, Response, request
 import json
-import sqlite3
 import os
+import sqlite3
 import sys
+
+from flask import Flask, Response, request
 
 db_file = os.environ.get('DB_FILE')
 if db_file is None:
@@ -10,13 +11,15 @@ if db_file is None:
 
 app = Flask(__name__)
 
+
 @app.route('/message_published', methods=['POST'])
 def message_published():
     data = request.get_json()
 
     sensor_id = sensor_id_from_topic(data["topic"])
     if sensor_id is None:
-        # Just ignore messages that don't match the expected topic format: sensor/<sensor_id>/data
+        # Just ignore messages that don't match the expected
+        # topic format: sensor/<sensor_id>/data
         return Response(status=200)
 
     paylaod = json.loads(data["payload"])
@@ -25,7 +28,8 @@ def message_published():
 
     conn = sqlite3.connect(db_file)
     conn.execute(
-        "INSERT INTO measurements(sensor_id, temperature, created_at) VALUES (?, ?, ?)",
+        "INSERT INTO measurements(sensor_id, temperature, created_at) "
+        "VALUES (?, ?, ?)",
         (sensor_id, temperature, created_at)
     )
     conn.commit()
@@ -38,4 +42,3 @@ def sensor_id_from_topic(topic):
     if len(segments) < 3 or segments[0] != "sensor" or segments[2] != "data":
         return None
     return segments[1]
-

@@ -1,7 +1,6 @@
-import sqlite3
 import os
+import sqlite3
 import sys
-import time
 
 db_file = os.environ.get('DB_FILE')
 if db_file is None:
