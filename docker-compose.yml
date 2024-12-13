@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  emqx:
+    image: emqx:5.8.3
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+      - "8084:8084"
+      - "8081:8081"
+      - "18083:18083"
+    environment:
+      # connector, `sqlite_export` is our custom comnector's name
+      EMQX_connectors__http__sqlite_export__url: "http://server:8080/message_published"
+      EMQX_connectors__http__sqlite_export__enable: true
+      # action, `sqlite_export` is our custom action's name
+      EMQX_actions__http__sqlite_export__connector: sqlite_export
+      EMQX_actions__http__sqlite_export__enable: true
+      EMQX_actions__http__sqlite_export__parameters__method: post
+      # export rule
+      EMQX_rule_engine__rules__sqlite_export__actions__1: http:sqlite_export
+      EMQX_rule_engine__rules__sqlite_export__enable: true
+      EMQX_rule_engine__rules__sqlite_export__sql: 'SELECT * FROM "#"'
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./db:/db
+    environment:
+      DB_FILE: /db/db.sqlite
+    depends_on:
+      server_init:
+        condition: service_completed_successfully
+
+  server_init:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    volumes:
+      - ./db:/db
+    environment:
+      DB_FILE: /db/db.sqlite
+    command:
+      - /usr/bin/python3
+      - init_db.py
